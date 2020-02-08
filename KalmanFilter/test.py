@@ -10,6 +10,15 @@ b= [[1,2,3],
     [1,2,3]]
 
 c = a+b
+open=[[2,4,1],[8,0,0],[3,0,1]]
+open.sort()
+print('sort: ',open)
+open.reverse()
+print('reverse: ',open)
+next = open.pop()
+print('next: ',next)
+next = open.pop()
+print('next: ',next)
 
-furkan = [[2. * pi / 10, 20.] for row in range(8)]
+furkan = [[0 for row in range(len(b[0]))] for col in range(len(b))]
 print("furkan:",furkan)
