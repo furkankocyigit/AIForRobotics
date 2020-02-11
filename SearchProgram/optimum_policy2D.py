@@ -72,7 +72,7 @@ while change:
             for orientation in range(4):
                 if goal[0] == x and goal[1] == y:
                     if value[orientation][x][y] > 0:
-                        change = True
+                        change = False
                         value[orientation][x][y] = 0
                         policy[orientation][x][y] = '*'
                 elif grid[x][y] == 0:
