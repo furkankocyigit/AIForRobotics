@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python3
 
 # -----------
@@ -7,8 +8,10 @@
 # of robot motion. The desired trajectory for the 
 # robot is the x-axis. The steering angle should be set
 # by the parameter tau so that:
-#
-# steering = -tau * crosstrack_error
+
+# steering = -tau_p * CTE - tau_d * diff_CTE
+# where differential crosstrack error (diff_CTE)
+# is given by CTE(t) - CTE(t-1)
 #
 # You'll only need to modify the `run` function at the bottom.
 # ------------
@@ -91,34 +94,150 @@ class Robot(object):
         return '[x=%.5f y=%.5f orient=%.5f]' % (self.x, self.y, self.orientation)
 
 
-
+#for normal PID run function
+'''
 robot = Robot()
-robot.set(0.0, 1.0, 0.0)
+robot.set(0.0, 1.0, 0.0)'''
 
-def run(robot, tau, n = 100, speed = 1.0):
+def make_robot():
+    """
+    Resets the robot back to the initial position and drift.
+    You'll want to call this after you call `run`.
+    """
+    robot = Robot()
+    robot.set(0.0, 1.0, 0.0)
+    robot.set_steering_drift(10.0 / 180.0 *np.pi) #10 degree drift
+    return robot
+
+def run_p(robot, tau, n = 100, speed = 1.0):
     x_trajectory = []
     y_trajectory = []
     
 
     for i in range(n):
-        
+        #only P controller
         crosstrack_error = robot.y
         steering = -crosstrack_error * tau
-        robot.move(steering,1.0)
+        robot.move(steering,speed)
         x_trajectory.append(robot.x)
         y_trajectory.append(robot.y)
 
 
     return x_trajectory, y_trajectory
 
+def run_pd(robot, tau_p, tau_d, n = 100, speed = 1.0):
+    x_trajectory = []
+    y_trajectory = []
+    delta_t = 1.0
+    prev_cte = robot.y
+
+    for i in range(n):
+        #PD controller
+        cte = robot.y
+        diff_cte = (cte - prev_cte) / delta_t
+        prev_cte = cte
+        steer = -tau_p * cte - tau_d * diff_cte
+        robot.move(steer, speed)
+        x_trajectory.append(robot.x)
+        y_trajectory.append(robot.y)
+
+    return x_trajectory,y_trajectory
+
+def run_pid(robot, tau_p, tau_d, tau_i, n=100, speed=1.0):
+    x_trajectory = []
+    y_trajectory = []
+    delta_t = 1.0
+    prev_cte = robot.y
+    u_i = 0.0
+
+    for i in range(n):
+        #PID controller
+        cte = robot.y
+        diff_cte = (cte - prev_cte) / delta_t
+        prev_cte = cte
+        u_i += tau_i * delta_t * cte
+
+        steer = -tau_p * cte - tau_d * diff_cte - u_i
+        robot.move(steer, speed)
+        x_trajectory.append(robot.x)
+        y_trajectory.append(robot.y)
 
 
-x_trajectory, y_trajectory = run(robot, 0.1)
+    return x_trajectory,y_trajectory
+
+#note: We use params instead of tau_p, tau_d, tau_i
+def run(robot, params, n = 100, speed = 1.0):
+    x_trajectory = []
+    y_trajectory = []
+    err = 0.0
+    prev_cte = robot.y
+    int_cte = 0.0
+
+    for i in range(2 * n):
+        cte = robot.y
+        diff_cte = cte -prev_cte
+        int_cte += cte
+        prev_cte = cte
+
+        steer = -params[0] * cte - params[1] * diff_cte - params[2] * int_cte
+
+        robot.move(steer, speed)
+        x_trajectory.append(robot.x)
+        y_trajectory.append(robot.y)
+
+        if i >= n:
+            err +=cte ** 2
+
+    return x_trajectory, y_trajectory, err/n
+
+
+#make this tolerance bigger if you are timing out
+def twiddle(tol = 0.2):
+    # Don't forget to call `make_robot` before you call `run`!
+    p = [0.0, 0.0, 0.0]
+    dp= [1.0, 1.0, 1.0]
+    robot = make_robot()
+    x_trajectory, y_trajectory, best_err = run(robot, p)
+    
+    count = 0
+    while(sum(dp) > tol):
+        print("Iteration {}, best error = {}".format(count, best_err))
+        for i in range(len(p)):
+            p[i] +=dp[i]
+            robot = make_robot()
+            x_trajectory, y_trajectory, err = run(robot, p)
+
+            if err < best_err:
+                best_err = err
+                dp[i] *= 1.1
+            else:
+                p[i] -= 2*dp[i]
+                robot = make_robot()
+                x_trajectory, y_trajectory, err = run(robot, p)
+
+                if err < best_err:
+                    best_err = err
+                    dp[i] *= 1.1
+                else:
+                    p[i] += dp[i]
+                    dp[i] *=0.9
+        count += 1
+
+
+    return p, best_err
+
+params, err = twiddle()
+print("Final twiddle error = {}, params = {}".format(err,params))
+
+robot = make_robot()
+x_trajectory, y_trajectory, err = run(robot, params)
+
+#x_trajectory, y_trajectory = run_pid(robot, 6.45604209040829, 20.45448584053812, 0.6065696246643602)
 n = len(x_trajectory)
 
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize = (8, 8))
-ax1.plot(x_trajectory, y_trajectory, 'g', label = 'P controller')
-ax1.plot(x_trajectory, np.zeros(n), 'r', label = 'reference')
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(8, 8))
+ax1.plot(x_trajectory, y_trajectory, 'g', label='PD controller')
+ax1.plot(x_trajectory, np.zeros(n), 'r', label='reference')
 plt.show()
 
 
