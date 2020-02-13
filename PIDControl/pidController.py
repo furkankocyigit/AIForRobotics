@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 class Robot(object):
     def __init__(self, length = 20.0):
         #Creates robot and initializes location/orientation to 0, 0, 0.
-        self.x_ = 0.0
+        self.x = 0.0
         self.y = 0.0
         self.orientation = 0.0
         self.length = length
