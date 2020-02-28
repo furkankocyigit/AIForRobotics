@@ -48,11 +48,6 @@ class plan:
             for j in range(len(self.grid[0])):
                 self.heuristic[i][j] = abs(i - self.goal[0]) + \
                     abs(j - self.goal[1])
-            
-        '''print('grid: ',len(grid))
-        print('grdi[0]: ',len(grid[0]))
-        for i in range(len(self.heuristic)):
-            print(self.heuristic[i])'''
 
 
 
@@ -103,7 +98,7 @@ class plan:
             # check if we still have elements on the open list
             if len(open) == 0:
                 resign = True
-                print('############ Search terminated without success')
+                print('###### Search terminated without success')
                 
             else:
                 # remove node from list
@@ -118,7 +113,7 @@ class plan:
 
             if x == goal[0] and y == goal[1]:
                 found = True
-                # print('####### A* search is succesfull')
+                # print '###### A* search successful'
 
             else:
                 # expand winning element and add to new open list
@@ -171,7 +166,7 @@ class plan:
                tolerance = 0.000001):
 
         if self.path == []:
-            raise ValueError('Run A* algorithm first before smoothing path')
+            raise ValueError("Run A* first before smoothing path")
 
         self.spath = [[0 for row in range(len(self.path[0]))] \
                            for col in range(len(self.path))]
@@ -525,7 +520,7 @@ def run(grid, goal, spath, params, printflag = False, speed = 0.1, timeout = 100
         filter.sense(Z)
 
         if not myrobot.check_collision(grid):
-            print("######### collision #########")
+            print('##### Collision ####')
 
         err += (cte ** 2)
         N += 1
@@ -579,8 +574,8 @@ measurement_noise = 0.3
 
 weight_data       = 0.1
 weight_smooth     = 0.2
-p_gain            = 0.5
-d_gain            = 0.5
+p_gain            = 2.0
+d_gain            = 6.0
 
     
 print(main(grid, init, goal, steering_noise, distance_noise, measurement_noise, 
@@ -589,7 +584,7 @@ print(main(grid, init, goal, steering_noise, distance_noise, measurement_noise,
 
 
 
-'''def twiddle(init_params):
+def twiddle(init_params):
     n_params   = len(init_params)
     dparams    = [1.0 for row in range(n_params)]
     params     = [0.0 for row in range(n_params)]
@@ -624,7 +619,7 @@ print(main(grid, init, goal, steering_noise, distance_noise, measurement_noise,
                     err += ret[1] * 100 + ret[2]
                 else:
                     err += 99999
-            print(float(err) / float(k + 1))
+            print(float(err) / float(k+1))
             if err < best_error:
                 best_error = float(err) / float(k+1)
                 dparams[i] *= 1.1
@@ -632,9 +627,9 @@ print(main(grid, init, goal, steering_noise, distance_noise, measurement_noise,
                 params[i] -= 2.0 * dparams[i]            
                 err = 0
                 for k in range(K):
-                    ret = main(grid, init, goal, \
-                                steering_noise,distance_noise, measurement_noise, \
-                                params[0], params[1], params[2], params[3], best_error)
+                    ret = main(grid, init, goal, 
+                               steering_noise, distance_noise, measurement_noise, 
+                               params[0], params[1], params[2], params[3], best_error)
                     if ret[0]:
                         err += ret[1] * 100 + ret[2]
                     else:
@@ -649,7 +644,7 @@ print(main(grid, init, goal, steering_noise, distance_noise, measurement_noise,
         n += 1
         print('Twiddle #', n, params, ' -> ', best_error)
     print(' ')
-    return params'''
+    return params
 
 
 #twiddle([weight_data, weight_smooth, p_gain, d_gain])
