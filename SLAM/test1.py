@@ -119,7 +119,7 @@ class plan:
 
             if x == goal[0] and y == goal[1]:
                 found = True
-                # print '###### A* search successful'
+                print('###### A* search successful')
 
             else:
                 # expand winning element and add to new open list
